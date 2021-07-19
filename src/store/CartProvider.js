@@ -2,17 +2,45 @@ import { useReducer } from 'react';
 import CartContext from './cart-context';
 
 const initialCart = {
-  items: [{ name: 'Hilsha', amount: 1 }],
+  items: [],
   totalPrice: 0,
 };
 
 const cartReducer = (state, action) => {
   if (action.type === 'ADD') {
-    const updatedItems = state.items.concat(action.item);
-    const UpdatedtotalPrice =
-      state.totalPrice + state.items.amount * state.items.price;
-    return { items: updatedItems, totalPrice: UpdatedtotalPrice };
+    let updatedItems = [...state.items];
+    const updatedTotalPrice =
+      state.totalPrice + action.item.amount * action.item.price;
+
+    const existingItemIndex = state.items.findIndex(
+      (item) => item.id === action.item.id
+    );
+
+    if (existingItemIndex !== -1) {
+      let updatedItem = state.items[existingItemIndex];
+      updatedItem.amount = updatedItem.amount + action.item.amount;
+      updatedItems[existingItemIndex] = updatedItem;
+    } else {
+      updatedItems = state.items.concat(action.item);
+    }
+    return { items: updatedItems, totalPrice: updatedTotalPrice };
   }
+  if (action.type === 'REMOVE') {
+    let updatedItems = [...state.items];
+    let existingItemIndex = updatedItems.findIndex(
+      (item) => item.id === action.id
+    );
+    let updatedItem = updatedItems[existingItemIndex];
+    const updatedTotalPrice = state.totalPrice - updatedItem.price;
+    if (updatedItem.amount === 1) {
+      updatedItems = updatedItems.filter((item) => item.id !== action.id);
+    } else {
+      updatedItem.amount = updatedItem.amount - 1;
+      updatedItems[existingItemIndex] = updatedItem;
+    }
+    return { items: updatedItems, totalPrice: updatedTotalPrice };
+  }
+  return initialCart;
 };
 
 const CartProvider = (props) => {
@@ -20,7 +48,9 @@ const CartProvider = (props) => {
   const addItemToCart = (item) => {
     dispatchCart({ type: 'ADD', item: item });
   };
-  const removeItemFromCart = (id) => {};
+  const removeItemFromCart = (id) => {
+    dispatchCart({ type: 'REMOVE', id: id });
+  };
 
   const cartContext = {
     items: cart.items,
